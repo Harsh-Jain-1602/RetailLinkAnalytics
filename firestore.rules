@@ -1,0 +1,283 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isStoreOwner(storeId) {
+      return isSignedIn() && isVerified() && request.auth.uid == storeId;
+    }
+
+    function parentStoreOwned(storeId) {
+      return exists(/databases/$(database)/documents/stores/$(storeId)) &&
+        get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid;
+    }
+
+    function isValidStore(data, storeId) {
+      return data.keys().hasAll([
+          'ownerId', 'storeName', 'ownerName', 'location',
+          'planStatus', 'trialDay', 'consecutiveLogDays',
+          'weeklyRestockCycles', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'storeName', 'ownerName', 'location',
+          'planStatus', 'trialDay', 'consecutiveLogDays',
+          'weeklyRestockCycles', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && isValidId(data.ownerId) && data.ownerId == request.auth.uid &&
+        data.ownerId == storeId &&
+        data.storeName is string && data.storeName.size() >= 2 && data.storeName.size() <= 120 &&
+        data.ownerName is string && data.ownerName.size() >= 1 && data.ownerName.size() <= 100 &&
+        data.location is string && data.location.size() >= 2 && data.location.size() <= 120 &&
+        data.planStatus is string && data.planStatus in ['trial', 'active'] &&
+        data.trialDay is int && data.trialDay >= 1 && data.trialDay <= 3650 &&
+        data.consecutiveLogDays is int && data.consecutiveLogDays >= 0 && data.consecutiveLogDays <= 3650 &&
+        data.weeklyRestockCycles is int && data.weeklyRestockCycles >= 0 && data.weeklyRestockCycles <= 500 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidItem(data, storeId) {
+      return data.keys().hasAll([
+          'ownerId', 'storeId', 'name', 'category', 'unit',
+          'currentStock', 'dailyVelocity', 'leadTimeDays', 'safetyBufferDays',
+          'costPrice', 'sellingPrice', 'distributorId', 'distributorName',
+          'totalSoldTrial', 'lastLoggedAt', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'storeId', 'name', 'category', 'unit',
+          'currentStock', 'dailyVelocity', 'leadTimeDays', 'safetyBufferDays',
+          'costPrice', 'sellingPrice', 'distributorId', 'distributorName',
+          'totalSoldTrial', 'lastLoggedAt', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && isValidId(data.ownerId) && data.ownerId == request.auth.uid &&
+        data.storeId is string && isValidId(data.storeId) && data.storeId == storeId &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.category is string && data.category in [
+          'Dairy & Bread', 'Snacks & Biscuits', 'Staples & Oils', 'Beverages', 'Personal & Home'
+        ] &&
+        data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 32 &&
+        data.currentStock is number && data.currentStock >= 0 && data.currentStock <= 100000 &&
+        data.dailyVelocity is number && data.dailyVelocity >= 0 && data.dailyVelocity <= 10000 &&
+        data.leadTimeDays is number && data.leadTimeDays >= 0.5 && data.leadTimeDays <= 30 &&
+        data.safetyBufferDays is number && data.safetyBufferDays >= 0 && data.safetyBufferDays <= 30 &&
+        data.costPrice is number && data.costPrice >= 0 && data.costPrice <= 100000 &&
+        data.sellingPrice is number && data.sellingPrice >= 0 && data.sellingPrice <= 100000 &&
+        data.distributorId is string && isValidId(data.distributorId) &&
+        data.distributorName is string && data.distributorName.size() >= 2 && data.distributorName.size() <= 120 &&
+        data.totalSoldTrial is number && data.totalSoldTrial >= 0 && data.totalSoldTrial <= 1000000 &&
+        data.lastLoggedAt is timestamp &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDailyLog(data, storeId) {
+      return data.keys().hasAll([
+          'ownerId', 'storeId', 'dateKey', 'itemsLoggedCount',
+          'totalUnitsSold', 'estimatedRevenue', 'alertsTriggered', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'storeId', 'dateKey', 'itemsLoggedCount',
+          'totalUnitsSold', 'estimatedRevenue', 'alertsTriggered', 'createdAt'
+        ]) &&
+        data.ownerId is string && isValidId(data.ownerId) && data.ownerId == request.auth.uid &&
+        data.storeId is string && isValidId(data.storeId) && data.storeId == storeId &&
+        data.dateKey is string && data.dateKey.size() == 10 && data.dateKey.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+        data.itemsLoggedCount is int && data.itemsLoggedCount >= 0 && data.itemsLoggedCount <= 500 &&
+        data.totalUnitsSold is number && data.totalUnitsSold >= 0 && data.totalUnitsSold <= 100000 &&
+        data.estimatedRevenue is number && data.estimatedRevenue >= 0 && data.estimatedRevenue <= 10000000 &&
+        data.alertsTriggered is int && data.alertsTriggered >= 0 && data.alertsTriggered <= 500 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidDistributor(data, storeId) {
+      return data.keys().hasAll([
+          'ownerId', 'storeId', 'name', 'whatsappNumber',
+          'area', 'categories', 'avgLeadTimeDays', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'storeId', 'name', 'whatsappNumber',
+          'area', 'categories', 'avgLeadTimeDays', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && isValidId(data.ownerId) && data.ownerId == request.auth.uid &&
+        data.storeId is string && isValidId(data.storeId) && data.storeId == storeId &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.whatsappNumber is string && data.whatsappNumber.size() >= 8 && data.whatsappNumber.size() <= 20 &&
+        data.whatsappNumber.matches('^[0-9+\\-\\s]{8,20}$') &&
+        data.area is string && data.area.size() >= 2 && data.area.size() <= 120 &&
+        data.categories is string && data.categories.size() >= 2 && data.categories.size() <= 160 &&
+        data.avgLeadTimeDays is number && data.avgLeadTimeDays >= 0.5 && data.avgLeadTimeDays <= 30 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidRestockOrder(data, storeId) {
+      return data.keys().hasAll([
+          'ownerId', 'storeId', 'distributorId', 'distributorName',
+          'itemIds', 'itemsSummary', 'itemCount', 'totalUnits',
+          'estimatedCost', 'whatsappMessage', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'ownerId', 'storeId', 'distributorId', 'distributorName',
+          'itemIds', 'itemsSummary', 'itemCount', 'totalUnits',
+          'estimatedCost', 'whatsappMessage', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.ownerId is string && isValidId(data.ownerId) && data.ownerId == request.auth.uid &&
+        data.storeId is string && isValidId(data.storeId) && data.storeId == storeId &&
+        data.distributorId is string && isValidId(data.distributorId) &&
+        data.distributorName is string && data.distributorName.size() >= 2 && data.distributorName.size() <= 120 &&
+        data.itemIds is list && data.itemIds.size() >= 1 && data.itemIds.size() <= 50 && data.itemIds[0] is string &&
+        data.itemsSummary is string && data.itemsSummary.size() >= 2 && data.itemsSummary.size() <= 2000 &&
+        data.itemCount is int && data.itemCount >= 1 && data.itemCount <= 50 &&
+        data.totalUnits is number && data.totalUnits >= 1 && data.totalUnits <= 100000 &&
+        data.estimatedCost is number && data.estimatedCost >= 0 && data.estimatedCost <= 10000000 &&
+        data.whatsappMessage is string && data.whatsappMessage.size() >= 5 && data.whatsappMessage.size() <= 3000 &&
+        data.status is string && data.status in ['draft', 'sent', 'delivered'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /stores/{storeId} {
+      allow get: if isStoreOwner(storeId) && isValidId(storeId) && existing().ownerId == request.auth.uid;
+      allow list: if false;
+      allow create: if isStoreOwner(storeId) && isValidId(storeId) &&
+        isValidStore(incoming(), storeId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isStoreOwner(storeId) && isValidId(storeId) &&
+        isValidStore(incoming(), storeId) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          incoming().diff(existing()).affectedKeys().hasOnly(['storeName', 'ownerName', 'location', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['trialDay', 'consecutiveLogDays', 'weeklyRestockCycles', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['planStatus', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      match /items/{itemId} {
+        allow get: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(itemId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+        allow list: if isSignedIn() && isVerified() &&
+          existing().ownerId == request.auth.uid && existing().storeId == storeId;
+        allow create: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(itemId) &&
+          isValidItem(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(itemId) &&
+          isValidItem(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().storeId == existing().storeId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'currentStock', 'dailyVelocity', 'totalSoldTrial', 'lastLoggedAt', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'currentStock', 'updatedAt'
+            ]) ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'category', 'unit', 'currentStock', 'dailyVelocity',
+              'leadTimeDays', 'safetyBufferDays', 'costPrice', 'sellingPrice',
+              'distributorId', 'distributorName', 'updatedAt'
+            ])
+          );
+        allow delete: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(itemId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /dailyLogs/{logId} {
+        allow get: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(logId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+        allow list: if isSignedIn() && isVerified() &&
+          existing().ownerId == request.auth.uid && existing().storeId == storeId;
+        allow create: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(logId) &&
+          isValidDailyLog(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if false;
+      }
+
+      match /distributors/{distributorId} {
+        allow get: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(distributorId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+        allow list: if isSignedIn() && isVerified() &&
+          existing().ownerId == request.auth.uid && existing().storeId == storeId;
+        allow create: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(distributorId) &&
+          isValidDistributor(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(distributorId) &&
+          isValidDistributor(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().storeId == existing().storeId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'whatsappNumber', 'area', 'categories', 'avgLeadTimeDays', 'updatedAt'
+          ]);
+        allow delete: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(distributorId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+      }
+
+      match /orders/{orderId} {
+        allow get: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(orderId) &&
+          parentStoreOwned(storeId) && existing().ownerId == request.auth.uid;
+        allow list: if isSignedIn() && isVerified() &&
+          existing().ownerId == request.auth.uid && existing().storeId == storeId;
+        allow create: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(orderId) &&
+          isValidRestockOrder(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          incoming().status in ['draft', 'sent'] &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isStoreOwner(storeId) && isValidId(storeId) && isValidId(orderId) &&
+          isValidRestockOrder(incoming(), storeId) &&
+          parentStoreOwned(storeId) &&
+          existing().status != 'delivered' &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().storeId == existing().storeId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            (existing().status == 'draft' && incoming().status == 'sent' &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'whatsappMessage', 'updatedAt'])) ||
+            (existing().status in ['draft', 'sent'] && incoming().status == 'delivered' &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+          );
+        allow delete: if false;
+      }
+    }
+  }
+}

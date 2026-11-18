@@ -1,0 +1,369 @@
+{
+  "entities": {
+    "StoreProfile": {
+      "title": "StoreProfile",
+      "description": "Independent retail store profile and 14-day MVP trial tracking.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storeName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "ownerName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "location": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "planStatus": {
+          "type": "string",
+          "enum": ["trial", "active"]
+        },
+        "trialDay": {
+          "type": "integer"
+        },
+        "consecutiveLogDays": {
+          "type": "integer"
+        },
+        "weeklyRestockCycles": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "storeName",
+        "ownerName",
+        "location",
+        "planStatus",
+        "trialDay",
+        "consecutiveLogDays",
+        "weeklyRestockCycles",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Fast-moving kirana SKU tracked by the predictive leagile stock alert engine.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storeId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Dairy & Bread",
+            "Snacks & Biscuits",
+            "Staples & Oils",
+            "Beverages",
+            "Personal & Home"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "currentStock": {
+          "type": "number"
+        },
+        "dailyVelocity": {
+          "type": "number"
+        },
+        "leadTimeDays": {
+          "type": "number"
+        },
+        "safetyBufferDays": {
+          "type": "number"
+        },
+        "costPrice": {
+          "type": "number"
+        },
+        "sellingPrice": {
+          "type": "number"
+        },
+        "distributorId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "distributorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "totalSoldTrial": {
+          "type": "number"
+        },
+        "lastLoggedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "storeId",
+        "name",
+        "category",
+        "unit",
+        "currentStock",
+        "dailyVelocity",
+        "leadTimeDays",
+        "safetyBufferDays",
+        "costPrice",
+        "sellingPrice",
+        "distributorId",
+        "distributorName",
+        "totalSoldTrial",
+        "lastLoggedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DailyLog": {
+      "title": "DailyLog",
+      "description": "Closing-time daily sales batch record for fast-moving items.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storeId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dateKey": {
+          "type": "string",
+          "maxLength": 10,
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "itemsLoggedCount": {
+          "type": "integer"
+        },
+        "totalUnitsSold": {
+          "type": "number"
+        },
+        "estimatedRevenue": {
+          "type": "number"
+        },
+        "alertsTriggered": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "storeId",
+        "dateKey",
+        "itemsLoggedCount",
+        "totalUnitsSold",
+        "estimatedRevenue",
+        "alertsTriggered",
+        "createdAt"
+      ]
+    },
+    "Distributor": {
+      "title": "Distributor",
+      "description": "Local wholesale distributor receiving automated WhatsApp restocking alerts.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storeId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20,
+          "pattern": "^[0-9+\\-\\s]{8,20}$"
+        },
+        "area": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "categories": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "avgLeadTimeDays": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "storeId",
+        "name",
+        "whatsappNumber",
+        "area",
+        "categories",
+        "avgLeadTimeDays",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RestockOrder": {
+      "title": "RestockOrder",
+      "description": "Automated predictive restocking order queued or dispatched via WhatsApp.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "storeId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "distributorId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "distributorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "itemIds": {
+          "type": "array"
+        },
+        "itemsSummary": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2000
+        },
+        "itemCount": {
+          "type": "integer"
+        },
+        "totalUnits": {
+          "type": "number"
+        },
+        "estimatedCost": {
+          "type": "number"
+        },
+        "whatsappMessage": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 3000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "sent", "delivered"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "storeId",
+        "distributorId",
+        "distributorName",
+        "itemIds",
+        "itemsSummary",
+        "itemCount",
+        "totalUnits",
+        "estimatedCost",
+        "whatsappMessage",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/stores/{storeId}": {
+      "schema": { "$ref": "#/entities/StoreProfile" },
+      "description": "Store profile owned by the authenticated store owner."
+    },
+    "/stores/{storeId}/items/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Fast-moving SKUs tracked for predictive stock alerts."
+    },
+    "/stores/{storeId}/dailyLogs/{logId}": {
+      "schema": { "$ref": "#/entities/DailyLog" },
+      "description": "Daily closing-time sales logs."
+    },
+    "/stores/{storeId}/distributors/{distributorId}": {
+      "schema": { "$ref": "#/entities/Distributor" },
+      "description": "Local wholesale distributors."
+    },
+    "/stores/{storeId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/RestockOrder" },
+      "description": "Automated predictive restocking orders dispatched via WhatsApp."
+    }
+  }
+}

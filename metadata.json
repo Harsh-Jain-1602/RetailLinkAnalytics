@@ -1,0 +1,6 @@
+{
+  "name": "RetailLink Analytics",
+  "description": "Predictive inventory management and automated restocking alerts for independent kirana and daily needs stores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
